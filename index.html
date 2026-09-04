@@ -1,182 +1,63 @@
-<!doctype html>
-<html lang="fr">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Charlie Ambert — Portfolio</title>
-  <meta name="description" content="Page d’accueil — accès au portfolio Notion." />
+<script>
+  const LOADER_TOTAL = 2200;
 
-  <style>
-    :root{
-      --bg1:#04060b;
-      --bg2:#081428;
-      --card: rgba(255,255,255,0.06);
-      --stroke: rgba(255,255,255,0.12);
-      --text: rgba(255,255,255,0.92);
-      --muted: rgba(255,255,255,0.70);
-      --accent: #6EE7FF;
+  const lines = [
+    "[init] booting secure gateway…",
+    "[ok]  entropy pool synced",
+    "[ok]  tls handshake established",
+    "[scan] verifying integrity…",
+    "[ok]  signature valid",
+    "[load] rendering landing…",
+    "[ok]  ready"
+  ];
 
-      --term: #2dff78;
-      --termDim: rgba(45,255,120,0.72);
-      --termBg: rgba(0,0,0,0.82);
-      --termStroke: rgba(45,255,120,0.22);
-    }
+  const term = document.getElementById("term");
+  const barFill = document.getElementById("barFill");
+  const loader = document.getElementById("loader");
 
-    *{ box-sizing:border-box; }
-    body{
-      margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      color:var(--text);
-      min-height:100vh;
-      background:
-        radial-gradient(1000px 600px at 20% 10%, rgba(110,231,255,0.12), transparent 60%),
-        radial-gradient(900px 700px at 80% 30%, rgba(124,58,237,0.10), transparent 55%),
-        linear-gradient(135deg, var(--bg1), var(--bg2));
-      display:grid;
-      place-items:center;
-      overflow:hidden;
-    }
+  function addLine(text){
+    const div = document.createElement("div");
+    div.className = "line";
+    div.innerHTML = text.replace("[ok]", "<strong>[ok]</strong>");
+    term.appendChild(div);
+    term.scrollTop = term.scrollHeight;
+  }
 
-    /* fond animé subtil */
-    .glow{
-      position:fixed; inset:-40%;
-      background: conic-gradient(from 180deg,
-        rgba(110,231,255,0.08),
-        rgba(124,58,237,0.08),
-        rgba(110,231,255,0.08));
-      filter: blur(70px);
-      animation: spin 12s linear infinite;
-      pointer-events:none;
-      opacity:0.7;
-    }
-    @keyframes spin { to{ transform: rotate(360deg); } }
+  function hideLoader(){
+    if (!loader) return;
+    loader.classList.add("hidden");
+  }
 
-    /* grain léger */
-    .noise{
-      position:fixed; inset:0;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
-      opacity: .07;
-      mix-blend-mode: overlay;
-      pointer-events:none;
-    }
+  // FAILSAFE: si quelque chose se passe mal, on cache le loader au bout de 4s max
+  setTimeout(hideLoader, 4000);
 
-    /* Loader terminal */
-    .loader{
-      position:fixed; inset:0;
-      display:grid;
-      place-items:center;
-      background: rgba(0,0,0,0.65);
-      backdrop-filter: blur(4px);
-      transition: opacity .45s ease, visibility .45s ease;
-      z-index: 10;
-      padding: 18px;
-    }
-    .loader.hidden{ opacity:0; visibility:hidden; }
+  window.addEventListener("load", () => {
+    try {
+      const start = performance.now();
+      let i = 0;
 
-    .terminal{
-      width: min(820px, 100%);
-      border:1px solid var(--termStroke);
-      background: var(--termBg);
-      border-radius: 16px;
-      box-shadow: 0 20px 70px rgba(0,0,0,0.55);
-      overflow:hidden;
-    }
-    .termTop{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      padding: 10px 12px;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
-      color: rgba(255,255,255,0.65);
-      font-size: 12px;
-    }
-    .dots{ display:flex; gap:7px; }
-    .dot{ width:10px; height:10px; border-radius:99px; background: rgba(255,255,255,0.18); }
-    .dot.r{ background:#ff5f56; }
-    .dot.y{ background:#ffbd2e; }
-    .dot.g{ background:#27c93f; }
+      const step = () => {
+        const now = performance.now();
+        const t = Math.min(1, (now - start) / LOADER_TOTAL);
+        if (barFill) barFill.style.width = Math.round(t * 100) + "%";
 
-    .termBody{
-      padding: 14px 14px 12px 14px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      color: var(--term);
-      font-size: 13px;
-      line-height: 1.55;
-      min-height: 220px;
-    }
-    .line{ color: var(--termDim); }
-    .line strong{ color: var(--term); font-weight: 700; }
+        const targetIndex = Math.min(lines.length, Math.floor(t * (lines.length + 1)));
+        while (i < targetIndex) { addLine(lines[i]); i++; }
 
-    .cursor{
-      display:inline-block;
-      width: 9px;
-      height: 16px;
-      vertical-align: -3px;
-      background: rgba(45,255,120,0.85);
-      margin-left: 4px;
-      animation: blink 1s steps(1) infinite;
-    }
-    @keyframes blink{ 50%{ opacity:0; } }
+        if (t < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
 
-    .barWrap{
-      padding: 0 14px 14px 14px;
+      setTimeout(hideLoader, LOADER_TOTAL);
+    } catch (e) {
+      // si erreur JS, on affiche la page quand même
+      hideLoader();
+      console.error(e);
     }
-    .bar{
-      height: 10px;
-      border-radius: 999px;
-      background: rgba(45,255,120,0.12);
-      border: 1px solid rgba(45,255,120,0.22);
-      overflow:hidden;
-    }
-    .bar > div{
-      height:100%;
-      width: 0%;
-      background: linear-gradient(90deg, rgba(45,255,120,0.35), rgba(45,255,120,0.95));
-      box-shadow: 0 0 26px rgba(45,255,120,0.22);
-      transition: width .25s ease;
-    }
+  });
 
-    /* carte principale */
-    .card{
-      width:min(720px, calc(100% - 32px));
-      border:1px solid var(--stroke);
-      background: var(--card);
-      border-radius: 18px;
-      padding: 28px;
-      box-shadow: 0 20px 70px rgba(0,0,0,0.45);
-      position:relative;
-    }
-
-    /* Fade-in */
-    .fade{
-      opacity:0;
-      transform: translateY(10px);
-      animation: fadeUp .75s ease forwards;
-    }
-    .d1{ animation-delay: .10s; }
-    .d2{ animation-delay: .22s; }
-    .d3{ animation-delay: .34s; }
-    .d4{ animation-delay: .46s; }
-    @keyframes fadeUp{ to{ opacity:1; transform: translateY(0); } }
-
-    h1{ margin: 0 0 8px 0; font-size: clamp(22px, 4vw, 34px); }
-    p{ margin: 0; color: var(--muted); line-height:1.5; }
-    .row{ display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
-
-    a.btn{
-      display:inline-flex;
-      align-items:center;
-      gap:10px;
-      padding: 12px 16px;
-      border-radius: 12px;
-      border:1px solid rgba(110,231,255,0.35);
-      background: rgba(110,231,255,0.12);
-      color: var(--text);
-      text-decoration:none;
-      font-weight: 600;
-      transition: transform .12s ease, background .2s ease, border-color .2s ease;
-    }
-    a.btn:hover{ transform: translateY(-1px); background: rgba(110,231,255,0.18); border-color: rgba(110,231,255,0.55); }
-    a.ghost{ border-color: rgba(255,255,255,0.18); background: rgba(255,255,255,0.06); }
-
-    .small{ margin-top:16px; font-size: 13px; color
+  // Raccourci: Escape pour skip
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") hideLoader();
+  });
+</script>
