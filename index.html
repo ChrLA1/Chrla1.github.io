@@ -8,13 +8,18 @@
 
   <style>
     :root{
-      --bg1:#070A12;
-      --bg2:#0B1630;
+      --bg1:#04060b;
+      --bg2:#081428;
       --card: rgba(255,255,255,0.06);
       --stroke: rgba(255,255,255,0.12);
       --text: rgba(255,255,255,0.92);
       --muted: rgba(255,255,255,0.70);
       --accent: #6EE7FF;
+
+      --term: #2dff78;
+      --termDim: rgba(45,255,120,0.72);
+      --termBg: rgba(0,0,0,0.82);
+      --termStroke: rgba(45,255,120,0.22);
     }
 
     *{ box-sizing:border-box; }
@@ -24,50 +29,114 @@
       color:var(--text);
       min-height:100vh;
       background:
-        radial-gradient(1000px 600px at 20% 10%, rgba(110,231,255,0.18), transparent 60%),
-        radial-gradient(900px 700px at 80% 30%, rgba(124,58,237,0.18), transparent 55%),
+        radial-gradient(1000px 600px at 20% 10%, rgba(110,231,255,0.12), transparent 60%),
+        radial-gradient(900px 700px at 80% 30%, rgba(124,58,237,0.10), transparent 55%),
         linear-gradient(135deg, var(--bg1), var(--bg2));
       display:grid;
       place-items:center;
       overflow:hidden;
     }
 
-    /* Fond animé (subtil) */
+    /* fond animé subtil */
     .glow{
       position:fixed; inset:-40%;
       background: conic-gradient(from 180deg,
-        rgba(110,231,255,0.10),
-        rgba(124,58,237,0.10),
-        rgba(110,231,255,0.10));
-      filter: blur(60px);
-      animation: spin 10s linear infinite;
+        rgba(110,231,255,0.08),
+        rgba(124,58,237,0.08),
+        rgba(110,231,255,0.08));
+      filter: blur(70px);
+      animation: spin 12s linear infinite;
       pointer-events:none;
       opacity:0.7;
     }
     @keyframes spin { to{ transform: rotate(360deg); } }
 
-    /* Loader */
+    /* grain léger */
+    .noise{
+      position:fixed; inset:0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+      opacity: .07;
+      mix-blend-mode: overlay;
+      pointer-events:none;
+    }
+
+    /* Loader terminal */
     .loader{
       position:fixed; inset:0;
-      display:grid; place-items:center;
-      background: rgba(5,8,16,0.86);
-      backdrop-filter: blur(6px);
-      transition: opacity .35s ease, visibility .35s ease;
+      display:grid;
+      place-items:center;
+      background: rgba(0,0,0,0.65);
+      backdrop-filter: blur(4px);
+      transition: opacity .45s ease, visibility .45s ease;
       z-index: 10;
+      padding: 18px;
     }
     .loader.hidden{ opacity:0; visibility:hidden; }
 
-    .ring{
-      width:54px; height:54px;
-      border-radius:50%;
-      border:4px solid rgba(255,255,255,0.18);
-      border-top-color: var(--accent);
-      animation: ring 0.9s linear infinite;
-      box-shadow: 0 0 24px rgba(110,231,255,0.25);
+    .terminal{
+      width: min(820px, 100%);
+      border:1px solid var(--termStroke);
+      background: var(--termBg);
+      border-radius: 16px;
+      box-shadow: 0 20px 70px rgba(0,0,0,0.55);
+      overflow:hidden;
     }
-    @keyframes ring{ to{ transform: rotate(360deg); } }
+    .termTop{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.65);
+      font-size: 12px;
+    }
+    .dots{ display:flex; gap:7px; }
+    .dot{ width:10px; height:10px; border-radius:99px; background: rgba(255,255,255,0.18); }
+    .dot.r{ background:#ff5f56; }
+    .dot.y{ background:#ffbd2e; }
+    .dot.g{ background:#27c93f; }
 
-    /* Carte */
+    .termBody{
+      padding: 14px 14px 12px 14px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      color: var(--term);
+      font-size: 13px;
+      line-height: 1.55;
+      min-height: 220px;
+    }
+    .line{ color: var(--termDim); }
+    .line strong{ color: var(--term); font-weight: 700; }
+
+    .cursor{
+      display:inline-block;
+      width: 9px;
+      height: 16px;
+      vertical-align: -3px;
+      background: rgba(45,255,120,0.85);
+      margin-left: 4px;
+      animation: blink 1s steps(1) infinite;
+    }
+    @keyframes blink{ 50%{ opacity:0; } }
+
+    .barWrap{
+      padding: 0 14px 14px 14px;
+    }
+    .bar{
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(45,255,120,0.12);
+      border: 1px solid rgba(45,255,120,0.22);
+      overflow:hidden;
+    }
+    .bar > div{
+      height:100%;
+      width: 0%;
+      background: linear-gradient(90deg, rgba(45,255,120,0.35), rgba(45,255,120,0.95));
+      box-shadow: 0 0 26px rgba(45,255,120,0.22);
+      transition: width .25s ease;
+    }
+
+    /* carte principale */
     .card{
       width:min(720px, calc(100% - 32px));
       border:1px solid var(--stroke);
@@ -88,23 +157,11 @@
     .d2{ animation-delay: .22s; }
     .d3{ animation-delay: .34s; }
     .d4{ animation-delay: .46s; }
-    @keyframes fadeUp{
-      to{ opacity:1; transform: translateY(0); }
-    }
+    @keyframes fadeUp{ to{ opacity:1; transform: translateY(0); } }
 
-    h1{
-      margin: 0 0 8px 0;
-      font-size: clamp(22px, 4vw, 34px);
-      letter-spacing: .2px;
-    }
+    h1{ margin: 0 0 8px 0; font-size: clamp(22px, 4vw, 34px); }
     p{ margin: 0; color: var(--muted); line-height:1.5; }
-
-    .row{
-      display:flex;
-      gap:12px;
-      flex-wrap:wrap;
-      margin-top:18px;
-    }
+    .row{ display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
 
     a.btn{
       display:inline-flex;
@@ -119,63 +176,7 @@
       font-weight: 600;
       transition: transform .12s ease, background .2s ease, border-color .2s ease;
     }
-    a.btn:hover{
-      transform: translateY(-1px);
-      background: rgba(110,231,255,0.18);
-      border-color: rgba(110,231,255,0.55);
-    }
+    a.btn:hover{ transform: translateY(-1px); background: rgba(110,231,255,0.18); border-color: rgba(110,231,255,0.55); }
+    a.ghost{ border-color: rgba(255,255,255,0.18); background: rgba(255,255,255,0.06); }
 
-    a.ghost{
-      border-color: rgba(255,255,255,0.18);
-      background: rgba(255,255,255,0.06);
-    }
-
-    .small{
-      margin-top:16px;
-      font-size: 13px;
-      color: rgba(255,255,255,0.55);
-    }
-  </style>
-</head>
-
-<body>
-  <div class="glow"></div>
-
-  <div class="loader" id="loader" aria-label="Chargement">
-    <div class="ring"></div>
-  </div>
-
-  <main class="card" role="main">
-    <h1 class="fade d1">Charlie Ambert</h1>
-    <p class="fade d2">BTS SIO (SISR) — alternance — AI Security / DevSecOps</p>
-
-    <div class="row fade d3">
-      <a class="btn" id="go"
-         href="https://wooden-numeric-f32.notion.site/Portfolio-Charlie-Ambert-8539c1583f284974ac2d106a8d9a5387"
-         target="_blank" rel="noopener">
-        Accéder au portfolio
-        <span aria-hidden="true">→</span>
-      </a>
-
-      <a class="btn ghost"
-         href="https://github.com/ChrLA1/Trebiq"
-         target="_blank" rel="noopener">
-        Voir le GitHub
-      </a>
-    </div>
-
-    <p class="small fade d4">
-      Envoie ce lien GitHub Pages dans tes candidatures, et le bouton ouvre Notion.
-    </p>
-  </main>
-
-  <script>
-    // Loader minimal puis reveal
-    window.addEventListener("load", () => {
-      setTimeout(() => {
-        document.getElementById("loader").classList.add("hidden");
-      }, 900); // durée du loader (ms)
-    });
-  </script>
-</body>
-</html>
+    .small{ margin-top:16px; font-size: 13px; color
